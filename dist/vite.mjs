@@ -1,70 +1,20 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
-
-// src/vite.ts
-var DEFAULT_PRIORITIES = {
-  "vendor": 1,
-  "main": 2,
-  "app": 3,
-  "chunk": 4
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
-function generateChunkConfiguration(customChunks = {}) {
-  const chunks = {
-    vendor: ["react", "react-dom"],
-    ...customChunks
-  };
-  return chunks;
-}
-function analyzeBuildOutput(bundle, priorities, assetPrefix = "") {
-  const js = {};
-  const css = {};
-  let totalOriginalSize = 0;
-  for (const [fileName, file] of Object.entries(bundle)) {
-    const fileInfo = file;
-    const filePath = assetPrefix + "/" + fileName;
-    if (fileName.endsWith(".js")) {
-      js[fileName] = filePath;
-      totalOriginalSize += fileInfo.code?.length || 0;
-    } else if (fileName.endsWith(".css")) {
-      css[fileName] = filePath;
-      totalOriginalSize += fileInfo.source?.length || 0;
-    }
-  }
-  const loadingSequence = {
-    js: Object.keys(js).sort((a, b) => {
-      const priorityA = priorities[a] || 999;
-      const priorityB = priorities[b] || 999;
-      return priorityA - priorityB;
-    }),
-    css: Object.keys(css)
-  };
-  return {
-    js,
-    css,
-    loadingSequence,
-    totalOriginalSize,
-    buildInfo: {
-      timestamp: Date.now(),
-      version: "1.0.0",
-      appName: "App",
-      compressionEnabled: false,
-      chunksGenerated: Object.keys(js).length,
-      plugin: "app-bootstrap-lib"
-    }
-  };
-}
-function transformIndexHtml(html, options) {
-  const bootstrapScript = `<script src="/${options.bootstrapFileName}"></script>`;
-  if (html.includes("</head>")) {
-    return html.replace("</head>", `  ${bootstrapScript}
-</head>`);
-  }
-  return bootstrapScript + "\n" + html;
-}
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// src/vite-plugin-utils.ts
 function generateAppBootstrap(assetManifest, options) {
   const { appName, loadingTheme, customTheme } = options;
   const themeCSS = customTheme || (loadingTheme === "gradient" ? "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" : "background: #2c3e50;");
@@ -250,6 +200,16 @@ function generateAppBootstrap(assetManifest, options) {
 })();
 `;
 }
+var init_vite_plugin_utils = __esm({
+  "src/vite-plugin-utils.ts"() {
+  }
+});
+
+// src/vite-plugin-server.ts
+var vite_plugin_server_exports = {};
+__export(vite_plugin_server_exports, {
+  generateDevModeFiles: () => generateDevModeFiles
+});
 function generateDevModeFiles(opts, publicDir = "public") {
   const fs = __require("fs");
   const path = __require("path");
@@ -288,32 +248,112 @@ function generateDevModeFiles(opts, publicDir = "public") {
     console.log(`[app-bootstrap-lib] \u2705 asset-manifest.js`);
   }
 }
+var init_vite_plugin_server = __esm({
+  "src/vite-plugin-server.ts"() {
+    init_vite_plugin_utils();
+  }
+});
+
+// src/vite.ts
+init_vite_plugin_utils();
+var DEFAULT_PRIORITIES = {
+  "vendor": 1,
+  "main": 2,
+  "app": 3,
+  "chunk": 4
+};
+function generateChunkConfiguration(customChunks = {}) {
+  const chunks = {
+    vendor: ["react", "react-dom"],
+    ...customChunks
+  };
+  return chunks;
+}
+function analyzeBuildOutput(bundle, priorities, assetPrefix = "") {
+  const js = {};
+  const css = {};
+  let totalOriginalSize = 0;
+  for (const [fileName, file] of Object.entries(bundle)) {
+    const fileInfo = file;
+    const filePath = assetPrefix ? `${assetPrefix}/${fileName}` : `/${fileName}`;
+    if (fileName.endsWith(".js")) {
+      js[fileName] = filePath;
+      totalOriginalSize += fileInfo.code?.length || 0;
+    } else if (fileName.endsWith(".css")) {
+      css[fileName] = filePath;
+      totalOriginalSize += fileInfo.source?.length || 0;
+    }
+  }
+  const loadingSequence = {
+    js: Object.keys(js).sort((a, b) => {
+      const priorityA = priorities[a] || 999;
+      const priorityB = priorities[b] || 999;
+      return priorityA - priorityB;
+    }),
+    css: Object.keys(css)
+  };
+  return {
+    js,
+    css,
+    loadingSequence,
+    totalOriginalSize,
+    buildInfo: {
+      timestamp: Date.now(),
+      version: "1.0.0",
+      appName: "App",
+      compressionEnabled: false,
+      chunksGenerated: Object.keys(js).length,
+      plugin: "app-bootstrap-lib"
+    }
+  };
+}
+function transformIndexHtml(html, options) {
+  const bootstrapScript = `<script src="/${options.bootstrapFileName}"></script>`;
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `  ${bootstrapScript}
+</head>`);
+  }
+  return bootstrapScript + "\n" + html;
+}
 function appBootstrapPlugin(options = {}) {
   let buildAssets;
   const opts = {
     enableGzip: false,
+    enableProgress: true,
+    enableFallback: true,
     debugMode: false,
     appName: "Application",
+    appIcon: "\u26A1",
     loadingTheme: "gradient",
     customTheme: "",
+    enableCDNFallback: false,
+    compressionFirst: false,
     customChunks: {},
     chunkPriorities: {},
     assetPrefix: "",
     bootstrapFileName: "AppBootstrap.js",
+    gzipLoaderConfig: {
+      debugMode: false,
+      useGzip: false,
+      fallbackToUncompressed: true,
+      timeout: 1e4,
+      retries: 3
+    },
     ...options
   };
   const priorities = { ...DEFAULT_PRIORITIES, ...opts.chunkPriorities };
   return {
     name: "app-bootstrap-lib",
-    configureServer(server) {
+    async configureServer(server) {
       console.log("[app-bootstrap-lib] \u{1F680} Development server starting, generating bootstrap files...");
-      const publicDir = server.config.publicDir || "public";
-      console.log("[app-bootstrap-lib] \u{1F4C1} Public directory:", publicDir);
-      generateDevModeFiles(opts, publicDir);
-    },
-    buildStart() {
-      console.log("[app-bootstrap-lib] \u{1F680} Build starting, generating bootstrap files...");
-      generateDevModeFiles(opts, "public");
+      try {
+        const { generateDevModeFiles: generateDevModeFiles2 } = await Promise.resolve().then(() => (init_vite_plugin_server(), vite_plugin_server_exports));
+        const publicDir = server.config.publicDir || "public";
+        console.log(`[app-bootstrap-lib] \u{1F4C1} Public directory: ${publicDir}`);
+        generateDevModeFiles2(opts, publicDir);
+      } catch (e) {
+        console.error("[app-bootstrap-lib] Error generating dev mode files:", e);
+      }
     },
     config(config) {
       if (!config.build) config.build = {};

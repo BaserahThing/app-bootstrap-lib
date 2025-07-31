@@ -14,9 +14,8 @@ npm install @basirah/app-bootstrap-lib
 - **React Hooks**: Easy integration with React applications
 - **Cache Manager**: Loading screens and service worker management
 - **Asset Manifest Generator**: CLI tool for generating detailed asset manifests
-- **Smart Script Loading**: Automatically detects and handles module vs non-module scripts
-- **Enhanced Error Handling**: Comprehensive error reporting and retry mechanisms
-- **Performance Tracking**: Built-in loading duration and progress tracking
+
+
 
 ## Quick Start
 
