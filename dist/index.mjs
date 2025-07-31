@@ -164,6 +164,7 @@ function generateAppBootstrap(assetManifest, options) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
+      script.type = 'module'; // Load as ES module
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('JS load failed: ' + src));
       document.head.appendChild(script);
