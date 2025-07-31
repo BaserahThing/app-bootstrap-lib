@@ -1,0 +1,86 @@
+{
+    "name": "@basirah/app-bootstrap-lib",
+    "version": "1.0.3",
+    "description": "Unified app bootstrap library - combines Vite plugin, React hooks, and cache management for seamless PWA loading",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        },
+        "./build-time": {
+            "types": "./dist/build-time.d.ts",
+            "import": "./dist/build-time.mjs",
+            "require": "./dist/build-time.js"
+        },
+        "./vite": {
+            "types": "./dist/vite.d.ts",
+            "import": "./dist/vite.mjs",
+            "require": "./dist/vite.js"
+        },
+        "./react": {
+            "types": "./dist/react.d.ts",
+            "import": "./dist/react.mjs",
+            "require": "./dist/react.js"
+        },
+        "./cache": {
+            "types": "./dist/cache.d.ts",
+            "import": "./dist/cache.mjs",
+            "require": "./dist/cache.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "test": "vitest",
+        "lint": "eslint src --ext .ts,.tsx",
+        "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    },
+    "keywords": [
+        "app-bootstrap",
+        "vite-plugin",
+        "react-hooks",
+        "cache-manager",
+        "pwa",
+        "loading",
+        "bootstrap"
+    ],
+    "author": "Basirah Team",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/BaserahThing/app-bootstrap-lib.git"
+    },
+    "bugs": {
+        "url": "https://github.com/BaserahThing/app-bootstrap-lib/issues"
+    },
+    "homepage": "https://github.com/BaserahThing/app-bootstrap-lib#readme",
+    "publishConfig": {
+        "access": "public"
+    },
+    "peerDependencies": {
+        "vite": "^4.0.0 || ^5.0.0 || ^6.0.0",
+        "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/react": "^18.0.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.0.0",
+        "react": "^18.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^1.0.0"
+    },
+    "engines": {
+        "node": ">=16"
+    }
+}
