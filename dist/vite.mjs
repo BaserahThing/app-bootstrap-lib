@@ -168,7 +168,7 @@ function generateAppBootstrap(assetManifest, options) {
     });
   }
 
-  function updateProgress(loaded: number, total: number) {
+  function updateProgress(loaded, total) {
     const progress = Math.round((loaded / total) * 100);
     window.APP_BOOTSTRAP_LOADING_STATE.progress = progress;
 
