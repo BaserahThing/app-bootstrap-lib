@@ -1,6 +1,6 @@
 {
     "name": "@basirah/app-bootstrap-lib",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "description": "Unified app bootstrap library - combines Vite plugin, React hooks, and cache management for seamless PWA loading",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
