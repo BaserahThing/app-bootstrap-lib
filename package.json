@@ -1,6 +1,6 @@
 {
     "name": "@basirah/app-bootstrap-lib",
-    "version": "1.0.3",
+    "version": "1.0.6",
     "description": "Unified app bootstrap library - combines Vite plugin, React hooks, and cache management for seamless PWA loading",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
@@ -41,7 +41,8 @@
         "dev": "tsup --watch",
         "test": "vitest",
         "lint": "eslint src --ext .ts,.tsx",
-        "lint:fix": "eslint src --ext .ts,.tsx --fix"
+        "lint:fix": "eslint src --ext .ts,.tsx --fix",
+        "prepublishOnly": "npm run build"
     },
     "keywords": [
         "app-bootstrap",

@@ -118,7 +118,7 @@ function generateAppBootstrap(assetManifest: AssetManifest, options: Required<Ap
     progress: 0,
     currentChunk: '',
     loadedChunks: [],
-    totalChunks: ${assetManifest.loadingSequence.js.length},
+    totalChunks: ${assetManifest.loadingSequence.js.length + assetManifest.loadingSequence.css.length},
     error: null,
     startTime: Date.now()
   };
@@ -197,6 +197,7 @@ function generateAppBootstrap(assetManifest: AssetManifest, options: Required<Ap
     const { loadingSequence } = window.ASSET_MANIFEST;
     const totalChunks = loadingSequence.js.length + loadingSequence.css.length;
     let loadedChunks = 0;
+    let errors = [];
 
     // Load CSS first
     for (const cssFile of loadingSequence.css) {
@@ -206,6 +207,7 @@ function generateAppBootstrap(assetManifest: AssetManifest, options: Required<Ap
         updateProgress(loadedChunks, totalChunks);
       } catch (error) {
         console.error('Failed to load CSS:', cssFile, error);
+        errors.push({ type: 'css', file: cssFile, error: error.message });
       }
     }
 
@@ -217,15 +219,23 @@ function generateAppBootstrap(assetManifest: AssetManifest, options: Required<Ap
         updateProgress(loadedChunks, totalChunks);
       } catch (error) {
         console.error('Failed to load JS:', jsFile, error);
+        errors.push({ type: 'js', file: jsFile, error: error.message });
       }
     }
 
     // Complete
     window.APP_BOOTSTRAP_LOADING_STATE.isLoaded = true;
     window.APP_BOOTSTRAP_LOADING_STATE.isLoading = false;
+    window.APP_BOOTSTRAP_LOADING_STATE.endTime = Date.now();
+    window.APP_BOOTSTRAP_LOADING_STATE.duration = window.APP_BOOTSTRAP_LOADING_STATE.endTime - window.APP_BOOTSTRAP_LOADING_STATE.startTime;
+
+    if (errors.length > 0) {
+      window.APP_BOOTSTRAP_LOADING_STATE.error = 'Some assets failed to load: ' + errors.map(e => e.file).join(', ');
+    }
+
     window.APP_BOOTSTRAP_READY = true;
 
-    window.APP_BOOTSTRAP_EVENTS.emit('loading:complete');
+    window.APP_BOOTSTRAP_EVENTS.emit('loading:complete', { errors });
     hideLoadingScreen();
   }
 
@@ -244,6 +254,15 @@ function generateAppBootstrap(assetManifest: AssetManifest, options: Required<Ap
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
+
+      // Set type based on file extension or content
+      if (src.endsWith('.mjs') || src.includes('type=module')) {
+        script.type = 'module';
+      } else {
+        // Default to regular script for .js files
+        script.type = 'text/javascript';
+      }
+
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('JS load failed: ' + src));
       document.head.appendChild(script);
