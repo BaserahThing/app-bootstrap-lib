@@ -142,7 +142,7 @@ export function generateAppBootstrap(assetManifest: AssetManifest, options: Requ
     hideLoadingScreen();
   }
 
-  function loadCSS(href: string): Promise<void> {
+  function loadCSS(href) {
     return new Promise((resolve, reject) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -153,7 +153,7 @@ export function generateAppBootstrap(assetManifest: AssetManifest, options: Requ
     });
   }
 
-  function loadJS(src: string): Promise<void> {
+  function loadJS(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
