@@ -35,6 +35,14 @@ export {
     initializeCacheManager
 } from './cache';
 
+// Export Workbox functionality
+export {
+    generateWorkboxServiceWorker,
+    generateServiceWorkerRegistration,
+    generatePWAManifest,
+    type WorkboxOptions
+} from './workbox';
+
 // Note: Asset manifest generator exports removed to prevent Node.js dependencies
 // from being bundled for the browser. The asset manifest generator should only
 // be used during the build process, not in the browser runtime.

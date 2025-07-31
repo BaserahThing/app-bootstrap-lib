@@ -30,6 +30,11 @@
             "types": "./dist/cache.d.ts",
             "import": "./dist/cache.mjs",
             "require": "./dist/cache.js"
+        },
+        "./workbox": {
+            "types": "./dist/workbox.d.ts",
+            "import": "./dist/workbox.mjs",
+            "require": "./dist/workbox.js"
         }
     },
     "files": [
@@ -49,6 +54,9 @@
         "react-hooks",
         "cache-manager",
         "pwa",
+        "workbox",
+        "service-worker",
+        "offline",
         "loading",
         "bootstrap"
     ],

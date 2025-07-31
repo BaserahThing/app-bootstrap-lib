@@ -2,4 +2,5 @@ export { a as AppBootstrapConfig, b as AppBootstrapOptions, A as AssetManifest, 
 export { appBootstrapPlugin, appBootstrapPlugin as vitePlugin } from './vite.js';
 export { appBootstrapEvents, useAppBootstrap, useAppBootstrapStatus, useAppBootstrapWithConfig } from './react.js';
 export { default as AppCacheManager, initializeCacheManager } from './cache.js';
+export { WorkboxOptions, generatePWAManifest, generateServiceWorkerRegistration, generateWorkboxServiceWorker } from './workbox.js';
 import 'vite';

@@ -1,5 +1,6 @@
 import { Plugin } from 'vite';
 import { b as AppBootstrapOptions } from './types-D8l6ur8u.mjs';
+import { WorkboxOptions } from './workbox.mjs';
 
 /**
  * Simplified Vite Plugin for App Bootstrap
@@ -12,6 +13,8 @@ import { b as AppBootstrapOptions } from './types-D8l6ur8u.mjs';
 /**
  * Main Vite plugin function
  */
-declare function appBootstrapPlugin(options?: AppBootstrapOptions): Plugin;
+declare function appBootstrapPlugin(options?: AppBootstrapOptions & {
+    workbox?: WorkboxOptions;
+}): Plugin;
 
 export { appBootstrapPlugin, appBootstrapPlugin as default };

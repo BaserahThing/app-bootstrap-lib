@@ -9,6 +9,7 @@
 import type { Plugin } from 'vite';
 import type { AppBootstrapOptions, AssetManifest } from './types';
 import { generateAppBootstrap } from './vite-plugin-utils';
+import { generateWorkboxServiceWorker, generateServiceWorkerRegistration, generatePWAManifest, type WorkboxOptions } from './workbox';
 
 // Default chunk priorities
 const DEFAULT_PRIORITIES = {
@@ -96,7 +97,7 @@ function transformIndexHtml(html: string, options: Required<AppBootstrapOptions>
 /**
  * Main Vite plugin function
  */
-export default function appBootstrapPlugin(options: AppBootstrapOptions = {}): Plugin {
+export default function appBootstrapPlugin(options: AppBootstrapOptions & { workbox?: WorkboxOptions } = {}): Plugin {
     let buildAssets: AssetManifest;
 
     // Set defaults
@@ -214,6 +215,42 @@ export default function appBootstrapPlugin(options: AppBootstrapOptions = {}): P
                 fileName: opts.bootstrapFileName,
                 source: appBootstrapContent
             });
+
+            // Generate Workbox service worker if enabled
+            if (options.workbox?.enabled !== false) {
+                const workboxOptions = options.workbox || {};
+                const serviceWorkerContent = generateWorkboxServiceWorker(assetManifest, opts, workboxOptions);
+
+                this.emitFile({
+                    type: 'asset',
+                    fileName: 'sw.js',
+                    source: serviceWorkerContent
+                });
+
+                // Generate PWA manifest
+                const manifestContent = generatePWAManifest(opts, workboxOptions);
+
+                this.emitFile({
+                    type: 'asset',
+                    fileName: 'manifest.webmanifest',
+                    source: manifestContent
+                });
+
+                // Generate service worker registration script
+                const registrationScript = generateServiceWorkerRegistration(opts, workboxOptions);
+                if (registrationScript) {
+                    this.emitFile({
+                        type: 'asset',
+                        fileName: 'registerSW.js',
+                        source: registrationScript
+                    });
+                }
+
+                if (opts.debugMode) {
+                    console.log(`[app-bootstrap-lib] 🔧 Generated Workbox service worker`);
+                    console.log(`[app-bootstrap-lib] 📱 Generated PWA manifest`);
+                }
+            }
 
             if (opts.debugMode) {
                 console.log(`[app-bootstrap-lib] ✅ Generated ${opts.bootstrapFileName}`);

@@ -7,6 +7,7 @@ export default defineConfig({
         'src/vite.ts',
         'src/react.ts',
         'src/cache.ts',
+        'src/workbox.ts',
     ],
     format: ['cjs', 'esm'],
     dts: true,
