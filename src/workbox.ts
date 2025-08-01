@@ -371,19 +371,23 @@ if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.p
  */
 export function generatePWAManifest(
     options: AppBootstrapOptions,
-    _workboxOptions: WorkboxOptions = {}
+    _workboxOptions: WorkboxOptions = {},
+    pwaConfig?: any
 ): string {
+    // Use PWA config if provided, otherwise use defaults
+    const manifestConfig = pwaConfig?.manifest || {};
+
     const manifest = {
-        name: options.appName || 'App',
-        short_name: (options.appName || 'App').replace(/\s+/g, '').substring(0, 12),
-        description: `PWA for ${options.appName || 'App'} with offline support`,
-        theme_color: options.loadingTheme === 'gradient' ? '#667eea' : '#2c3e50',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
-        icons: [
+        name: manifestConfig.name || options.appName || 'App',
+        short_name: manifestConfig.short_name || (options.appName || 'App').replace(/\s+/g, '').substring(0, 12),
+        description: manifestConfig.description || `PWA for ${options.appName || 'App'} with offline support`,
+        theme_color: manifestConfig.theme_color || (options.loadingTheme === 'gradient' ? '#667eea' : '#2c3e50'),
+        background_color: manifestConfig.background_color || '#ffffff',
+        display: manifestConfig.display || 'standalone',
+        orientation: manifestConfig.orientation || 'portrait',
+        scope: manifestConfig.scope || '/',
+        start_url: manifestConfig.start_url || '/',
+        icons: manifestConfig.icons || [
             {
                 src: '/icon-192x192.png',
                 sizes: '192x192',

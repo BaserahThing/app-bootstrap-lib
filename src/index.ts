@@ -1,7 +1,14 @@
 /**
- * App Bootstrap Library - Main Entry Point
+ * PWA Bootstrap Kit - Main Entry Point
  * Created: 2024-12-19
- * Purpose: Unified library combining Vite plugin, React hooks, and cache management
+ * Purpose: Complete PWA Bootstrap Toolkit - Vite plugin, React hooks, cache management, and service worker generation
+ *
+ * This library provides everything needed to create seamless Progressive Web App experiences:
+ * - Vite plugin for automatic asset manifest generation and loading optimization
+ * - React hooks for easy integration with React applications
+ * - Cache manager for loading screens and service worker management
+ * - PWA module for service worker registration and install prompts
+ * - Workbox integration for advanced service worker functionality
  */
 
 // Export all types
@@ -14,6 +21,11 @@ export type {
     CacheManagerConfig,
     CacheManager
 } from './types';
+
+// Export PWA types
+export type {
+    PWAConfig
+} from './pwa';
 
 // Re-export all modules
 
@@ -42,6 +54,13 @@ export {
     generatePWAManifest,
     type WorkboxOptions
 } from './workbox';
+
+// Export PWA functionality
+export {
+    PWAManager,
+    initializePWA,
+    createPWAManifest
+} from './pwa';
 
 // Note: Asset manifest generator exports removed to prevent Node.js dependencies
 // from being bundled for the browser. The asset manifest generator should only

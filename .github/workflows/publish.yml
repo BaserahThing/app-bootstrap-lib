@@ -1,0 +1,72 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.2.0)'
+        required: true
+        default: 'patch'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Run linting
+        run: npm run lint
+        
+      - name: Build package
+        run: npm run build
+        
+      - name: Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: Create GitHub Release
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: Release v${{ github.event.inputs.version }}
+          body: |
+            ## 🚀 New Release v${{ github.event.inputs.version }}
+            
+            ### ✨ What's New
+            - Enhanced PWA functionality
+            - Improved documentation
+            - Better TypeScript support
+            - New features and bug fixes
+            
+            ### 📦 Installation
+            ```bash
+            npm install @basirah/pwa-bootstrap-kit@${{ github.event.inputs.version }}
+            ```
+            
+            ### 🔄 Migration
+            If you're upgrading from a previous version, check the [migration guide](https://github.com/BaserahThing/pwa-bootstrap-kit#migration-guide) for details.
+            
+            ### 📚 Documentation
+            Visit our [documentation](https://github.com/BaserahThing/pwa-bootstrap-kit#readme) for complete usage examples.
+          draft: false
+          prerelease: false 

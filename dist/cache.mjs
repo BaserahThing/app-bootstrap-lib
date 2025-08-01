@@ -1,36 +1,5 @@
-// src/cache.ts
-var AppCacheManager = class {
-  constructor(config = {}) {
-    this.config = {
-      cacheName: "app-bootstrap-v1",
-      appVersion: "1.0.0",
-      enableServiceWorker: true,
-      loadingScreen: {
-        theme: "gradient"
-      },
-      ...config
-    };
-    this.loadingElement = null;
-  }
-  async init() {
-    console.log("App Cache Manager initializing...");
-    const existingLoadingScreen = document.getElementById("loading-screen");
-    if (!existingLoadingScreen) {
-      this.setupLoadingScreen();
-    } else {
-      this.loadingElement = existingLoadingScreen;
-    }
-    await this.loadApp();
-  }
-  setupLoadingScreen() {
-    const theme = this.config.loadingScreen?.theme || "gradient";
-    const customHTML = this.config.loadingScreen?.customHTML;
-    const loadingHTML = customHTML || this.getDefaultLoadingHTML(theme);
-    document.body.insertAdjacentHTML("afterbegin", loadingHTML);
-    this.loadingElement = document.getElementById("loading-screen");
-  }
-  getDefaultLoadingHTML(theme) {
-    const baseStyles = `
+var i=class{constructor(e={}){this.config={cacheName:"app-bootstrap-v1",appVersion:"1.0.0",enableServiceWorker:true,loadingScreen:{theme:"gradient"},...e},this.loadingElement=null;}async init(){console.log("App Cache Manager initializing...");let e=document.getElementById("loading-screen");e?this.loadingElement=e:this.setupLoadingScreen(),await this.loadApp();}setupLoadingScreen(){let e=this.config.loadingScreen?.theme||"gradient",n=this.config.loadingScreen?.customHTML||this.getDefaultLoadingHTML(e);document.body.insertAdjacentHTML("afterbegin",n),this.loadingElement=document.getElementById("loading-screen");}getDefaultLoadingHTML(e){return `
+      <div id="loading-screen" style="
       position: fixed;
       top: 0;
       left: 0;
@@ -43,10 +12,7 @@ var AppCacheManager = class {
       color: white;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       z-index: 9999;
-    `;
-    const background = theme === "gradient" ? "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" : "background: #2c3e50;";
-    return `
-      <div id="loading-screen" style="${baseStyles} ${background}">
+     ${e==="gradient"?"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);":"background: #2c3e50;"}">
         <div style="
           width: 40px;
           height: 40px;
@@ -64,57 +30,10 @@ var AppCacheManager = class {
           }
         </style>
       </div>
-    `;
-  }
-  updateLoadingText(text) {
-    const loadingText = document.getElementById("loading-text");
-    if (loadingText) {
-      loadingText.textContent = text;
-    }
-  }
-  async loadApp() {
-    this.updateLoadingText("Loading application...");
-    const checkAppReady = () => {
-      const rootElement = document.getElementById("root");
-      if (rootElement && rootElement.children.length > 0) {
-        const appContent = rootElement.querySelector(".app, .home-page, .system-config-page, .video-player-page");
-        if (appContent) {
-          console.log("[CacheManager] App content detected, hiding loading screen");
-          this.hideLoadingScreen();
-          return true;
-        }
-      }
-      return false;
-    };
-    if (checkAppReady()) return;
-    const pollInterval = setInterval(() => {
-      if (checkAppReady()) {
-        clearInterval(pollInterval);
-      }
-    }, 100);
-    setTimeout(() => {
-      clearInterval(pollInterval);
-      console.log("[CacheManager] Fallback timeout, hiding loading screen");
-      this.hideLoadingScreen();
-    }, 3e3);
-  }
-  hideLoadingScreen() {
-    if (this.loadingElement) {
-      this.loadingElement.style.opacity = "0";
-      this.loadingElement.style.transition = "opacity 0.3s ease-out";
-      setTimeout(() => {
-        if (this.loadingElement && this.loadingElement.parentNode) {
-          this.loadingElement.parentNode.removeChild(this.loadingElement);
-        }
-      }, 300);
-    }
-  }
-  showError(message) {
-    if (this.loadingElement) {
-      this.loadingElement.innerHTML = `
+    `}updateLoadingText(e){let t=document.getElementById("loading-text");t&&(t.textContent=e);}async loadApp(){this.updateLoadingText("Loading application...");let e=()=>{let n=document.getElementById("root");return n&&n.children.length>0&&n.querySelector(".app, .home-page, .system-config-page, .video-player-page")?(console.log("[CacheManager] App content detected, hiding loading screen"),this.hideLoadingScreen(),true):false};if(e())return;let t=setInterval(()=>{e()&&clearInterval(t);},100);setTimeout(()=>{clearInterval(t),console.log("[CacheManager] Fallback timeout, hiding loading screen"),this.hideLoadingScreen();},3e3);}hideLoadingScreen(){this.loadingElement&&(this.loadingElement.style.opacity="0",this.loadingElement.style.transition="opacity 0.3s ease-out",setTimeout(()=>{this.loadingElement&&this.loadingElement.parentNode&&this.loadingElement.parentNode.removeChild(this.loadingElement);},300));}showError(e){this.loadingElement&&(this.loadingElement.innerHTML=`
         <div style="text-align: center;">
           <h3>Error</h3>
-          <p>${message}</p>
+          <p>${e}</p>
           <button onclick="location.reload()" style="
             background: white;
             color: #667eea;
@@ -125,27 +44,5 @@ var AppCacheManager = class {
             margin-top: 10px;
           ">Retry</button>
         </div>
-      `;
-    }
-  }
-  retry() {
-    location.reload();
-  }
-  // Service Worker registration - removed to simplify
-};
-function initializeCacheManager(config) {
-  const manager = new AppCacheManager(config);
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      manager.init();
-    });
-  } else {
-    manager.init();
-  }
-  return manager;
-}
-var cache_default = AppCacheManager;
-
-export { AppCacheManager, cache_default as default, initializeCacheManager };
-//# sourceMappingURL=cache.mjs.map
+      `);}retry(){location.reload();}};function r(o){let e=new i(o);return document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{e.init();}):e.init(),e}var d=i;export{i as AppCacheManager,d as default,r as initializeCacheManager};//# sourceMappingURL=cache.mjs.map
 //# sourceMappingURL=cache.mjs.map

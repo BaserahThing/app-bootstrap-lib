@@ -1,7 +1,7 @@
 {
-    "name": "@basirah/app-bootstrap-lib",
-    "version": "1.1.5",
-    "description": "Unified app bootstrap library - combines Vite plugin, React hooks, and cache management for seamless PWA loading",
+    "name": "@basirah/vite-pwa-bootstrap",
+    "version": "1.2.0",
+    "description": "Vite PWA Bootstrap Toolkit - Vite plugin, React hooks, cache management, and service worker generation for seamless Progressive Web App experiences.",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
@@ -35,41 +35,52 @@
             "types": "./dist/workbox.d.ts",
             "import": "./dist/workbox.mjs",
             "require": "./dist/workbox.js"
+        },
+        "./pwa": {
+            "types": "./dist/pwa.d.ts",
+            "import": "./dist/pwa.mjs",
+            "require": "./dist/pwa.js"
         }
     },
     "files": [
         "dist",
-        "README.md"
+        "README.md",
+        "LICENSE"
     ],
     "scripts": {
         "build": "tsup",
         "dev": "tsup --watch",
         "test": "vitest",
-        "lint": "eslint src --ext .ts,.tsx",
-        "lint:fix": "eslint src --ext .ts,.tsx --fix"
+        "lint": "eslint src",
+        "lint:fix": "eslint src --fix",
+        "prepublishOnly": "npm run build",
+        "release": "npm run build && npm publish"
     },
     "keywords": [
-        "app-bootstrap",
+        "vite",
+        "pwa",
+        "progressive-web-app",
         "vite-plugin",
         "react-hooks",
         "cache-manager",
-        "pwa",
-        "workbox",
         "service-worker",
+        "workbox",
         "offline",
         "loading",
-        "bootstrap"
+        "bootstrap",
+        "asset-manifest",
+        "gzip-loader"
     ],
     "author": "Basirah Team",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/BaserahThing/app-bootstrap-lib.git"
+        "url": "git+https://github.com/BaserahThing/vite-pwa-bootstrap.git"
     },
     "bugs": {
-        "url": "https://github.com/BaserahThing/app-bootstrap-lib/issues"
+        "url": "https://github.com/BaserahThing/vite-pwa-bootstrap/issues"
     },
-    "homepage": "https://github.com/BaserahThing/app-bootstrap-lib#readme",
+    "homepage": "https://github.com/BaserahThing/vite-pwa-bootstrap#readme",
     "publishConfig": {
         "access": "public"
     },

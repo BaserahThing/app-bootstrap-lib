@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        run: npm run lint
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Build package
+        run: npm run build
+        
+      - name: Check build output
+        run: |
+          ls -la dist/
+          echo "Checking for required files..."
+          test -f dist/index.js
+          test -f dist/index.mjs
+          test -f dist/index.d.ts
+          test -f dist/vite.js
+          test -f dist/vite.mjs
+          test -f dist/vite.d.ts
+          test -f dist/react.js
+          test -f dist/react.mjs
+          test -f dist/react.d.ts
+          test -f dist/cache.js
+          test -f dist/cache.mjs
+          test -f dist/cache.d.ts
+          test -f dist/workbox.js
+          test -f dist/workbox.mjs
+          test -f dist/workbox.d.ts
+          test -f dist/pwa.js
+          test -f dist/pwa.mjs
+          test -f dist/pwa.d.ts
+          echo "✅ All required files present"
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.node-version }}
+          path: dist/
+          
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run security audit
+        run: npm audit --audit-level=moderate
+        
+      - name: Check for vulnerabilities
+        run: |
+          if npm audit --audit-level=high; then
+            echo "✅ No high severity vulnerabilities found"
+          else
+            echo "❌ High severity vulnerabilities found"
+            exit 1
+          fi 

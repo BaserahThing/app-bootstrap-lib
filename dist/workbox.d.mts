@@ -47,6 +47,6 @@ declare function generateServiceWorkerRegistration(options: AppBootstrapOptions,
 /**
  * Generate PWA manifest with Workbox integration
  */
-declare function generatePWAManifest(options: AppBootstrapOptions, _workboxOptions?: WorkboxOptions): string;
+declare function generatePWAManifest(options: AppBootstrapOptions, _workboxOptions?: WorkboxOptions, pwaConfig?: any): string;
 
 export { type WorkboxOptions, generatePWAManifest, generateServiceWorkerRegistration, generateWorkboxServiceWorker };
