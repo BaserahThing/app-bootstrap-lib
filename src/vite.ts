@@ -80,18 +80,27 @@ function analyzeBuildOutput(bundle: any, priorities: Record<string, number>, ass
 }
 
 /**
- * Transform index.html to include bootstrap script
+ * Transform index.html to include bootstrap script and service worker registration
  */
-function transformIndexHtml(html: string, options: Required<AppBootstrapOptions>): string {
+function transformIndexHtml(html: string, options: Required<AppBootstrapOptions>, workboxOptions?: any): string {
     const bootstrapScript = `<script src="/${options.bootstrapFileName}"></script>`;
+    const swRegistrationScript = workboxOptions?.enabled !== false ? `<script src="/registerSW.js"></script>` : '';
 
     // Insert before closing head tag
     if (html.includes('</head>')) {
-        return html.replace('</head>', `  ${bootstrapScript}\n</head>`);
+        const scriptsToAdd = [bootstrapScript];
+        if (swRegistrationScript) {
+            scriptsToAdd.push(swRegistrationScript);
+        }
+        return html.replace('</head>', `  ${scriptsToAdd.join('\n  ')}\n</head>`);
     }
 
     // Insert at the beginning if no head tag
-    return bootstrapScript + '\n' + html;
+    const scriptsToAdd = [bootstrapScript];
+    if (swRegistrationScript) {
+        scriptsToAdd.push(swRegistrationScript);
+    }
+    return scriptsToAdd.join('\n') + '\n' + html;
 }
 
 /**
@@ -132,19 +141,7 @@ export default function appBootstrapPlugin(options: AppBootstrapOptions & { work
     return {
         name: 'app-bootstrap-lib',
 
-        async configureServer(server) {
-            // This hook is only called in serve mode, so we can safely import
-            // the server-side code here.
-            console.log('[app-bootstrap-lib] 🚀 Development server starting, generating bootstrap files...');
-            try {
-                const { generateDevModeFiles } = await import('./vite-plugin-server.js');
-                const publicDir = server.config.publicDir || 'public';
-                console.log(`[app-bootstrap-lib] 📁 Public directory: ${publicDir}`);
-                generateDevModeFiles(opts, publicDir);
-            } catch (e) {
-                console.error('[app-bootstrap-lib] Error generating dev mode files:', e);
-            }
-        },
+
 
         config(config) {
             // Configure build options
@@ -182,7 +179,10 @@ export default function appBootstrapPlugin(options: AppBootstrapOptions & { work
         },
 
         transformIndexHtml(html) {
-            return transformIndexHtml(html, opts);
+            console.log('[app-bootstrap-lib] Transforming index.html...');
+            const result = transformIndexHtml(html, opts, options.workbox);
+            console.log('[app-bootstrap-lib] HTML transformation complete');
+            return result;
         },
 
         generateBundle(_options: any, bundle: any) {

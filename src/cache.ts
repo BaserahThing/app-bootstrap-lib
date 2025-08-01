@@ -26,7 +26,15 @@ export class AppCacheManager implements CacheManager {
 
     async init(): Promise<void> {
         console.log('App Cache Manager initializing...');
-        this.setupLoadingScreen();
+
+        // Check if loading screen already exists to prevent duplicates
+        const existingLoadingScreen = document.getElementById('loading-screen');
+        if (!existingLoadingScreen) {
+            this.setupLoadingScreen();
+        } else {
+            this.loadingElement = existingLoadingScreen;
+        }
+
         await this.loadApp();
     }
 
@@ -91,15 +99,48 @@ export class AppCacheManager implements CacheManager {
     private async loadApp(): Promise<void> {
         this.updateLoadingText('Loading application...');
 
-        // Wait for app to load, then hide loading screen
+        // Wait for React app to be ready, then hide loading screen
+        const checkAppReady = () => {
+            const rootElement = document.getElementById('root');
+            if (rootElement && rootElement.children.length > 0) {
+                // Check if React app has rendered content
+                const appContent = rootElement.querySelector('.app, .home-page, .system-config-page, .video-player-page');
+                if (appContent) {
+                    console.log('[CacheManager] App content detected, hiding loading screen');
+                    this.hideLoadingScreen();
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // Try immediately
+        if (checkAppReady()) return;
+
+        // Poll for app content
+        const pollInterval = setInterval(() => {
+            if (checkAppReady()) {
+                clearInterval(pollInterval);
+            }
+        }, 100);
+
+        // Fallback timeout
         setTimeout(() => {
+            clearInterval(pollInterval);
+            console.log('[CacheManager] Fallback timeout, hiding loading screen');
             this.hideLoadingScreen();
-        }, 2000);
+        }, 3000);
     }
 
     hideLoadingScreen(): void {
         if (this.loadingElement) {
-            this.loadingElement.style.display = 'none';
+            this.loadingElement.style.opacity = '0';
+            this.loadingElement.style.transition = 'opacity 0.3s ease-out';
+            setTimeout(() => {
+                if (this.loadingElement && this.loadingElement.parentNode) {
+                    this.loadingElement.parentNode.removeChild(this.loadingElement);
+                }
+            }, 300);
         }
     }
 

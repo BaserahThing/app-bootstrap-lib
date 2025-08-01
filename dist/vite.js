@@ -2,22 +2,6 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var __defProp = Object.defineProperty;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-};
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-
 // src/vite-plugin-utils.ts
 function generateAppBootstrap(assetManifest, options) {
   const { appName, loadingTheme, customTheme } = options;
@@ -205,62 +189,6 @@ function generateAppBootstrap(assetManifest, options) {
 })();
 `;
 }
-var init_vite_plugin_utils = __esm({
-  "src/vite-plugin-utils.ts"() {
-  }
-});
-
-// src/vite-plugin-server.ts
-var vite_plugin_server_exports = {};
-__export(vite_plugin_server_exports, {
-  generateDevModeFiles: () => generateDevModeFiles
-});
-function generateDevModeFiles(opts, publicDir = "public") {
-  const fs = __require("fs");
-  const path = __require("path");
-  const devAssetManifest = {
-    js: {
-      "main.js": "/src/main.tsx"
-    },
-    css: {},
-    loadingSequence: {
-      js: ["main.js"],
-      css: []
-    },
-    totalOriginalSize: 0,
-    buildInfo: {
-      timestamp: Date.now(),
-      version: "1.0.0-dev",
-      appName: opts.appName,
-      compressionEnabled: false,
-      chunksGenerated: 1,
-      plugin: "app-bootstrap-lib-dev"
-    }
-  };
-  const devAppBootstrapContent = generateAppBootstrap(devAssetManifest, opts);
-  const fullPublicDir = path.join(process.cwd(), publicDir);
-  if (!fs.existsSync(fullPublicDir)) {
-    fs.mkdirSync(fullPublicDir, { recursive: true });
-  }
-  const assetManifestPath = path.join(fullPublicDir, "asset-manifest.js");
-  const assetManifestContent = `window.ASSET_MANIFEST = ${JSON.stringify(devAssetManifest, null, 2)};`;
-  fs.writeFileSync(assetManifestPath, assetManifestContent);
-  const appBootstrapPath = path.join(fullPublicDir, opts.bootstrapFileName);
-  fs.writeFileSync(appBootstrapPath, devAppBootstrapContent);
-  if (opts.debugMode) {
-    console.log(`[app-bootstrap-lib] \u{1F4DD} Generated development files:`);
-    console.log(`[app-bootstrap-lib] \u2705 ${opts.bootstrapFileName}`);
-    console.log(`[app-bootstrap-lib] \u2705 asset-manifest.js`);
-  }
-}
-var init_vite_plugin_server = __esm({
-  "src/vite-plugin-server.ts"() {
-    init_vite_plugin_utils();
-  }
-});
-
-// src/vite.ts
-init_vite_plugin_utils();
 
 // src/workbox.ts
 var DEFAULT_WORKBOX_OPTIONS = {
@@ -660,54 +588,40 @@ function analyzeBuildOutput(bundle, priorities, assetPrefix = "") {
     }
   };
 }
-function transformIndexHtml(html, options) {
+function transformIndexHtml(html, options, workboxOptions) {
   const bootstrapScript = `<script src="/${options.bootstrapFileName}"></script>`;
+  const swRegistrationScript = workboxOptions?.enabled !== false ? `<script src="/registerSW.js"></script>` : "";
   if (html.includes("</head>")) {
-    return html.replace("</head>", `  ${bootstrapScript}
+    const scriptsToAdd2 = [bootstrapScript];
+    if (swRegistrationScript) {
+      scriptsToAdd2.push(swRegistrationScript);
+    }
+    return html.replace("</head>", `  ${scriptsToAdd2.join("\n  ")}
 </head>`);
   }
-  return bootstrapScript + "\n" + html;
+  const scriptsToAdd = [bootstrapScript];
+  if (swRegistrationScript) {
+    scriptsToAdd.push(swRegistrationScript);
+  }
+  return scriptsToAdd.join("\n") + "\n" + html;
 }
 function appBootstrapPlugin(options = {}) {
   let buildAssets;
   const opts = {
     enableGzip: false,
-    enableProgress: true,
-    enableFallback: true,
     debugMode: false,
     appName: "Application",
-    appIcon: "\u26A1",
     loadingTheme: "gradient",
     customTheme: "",
-    enableCDNFallback: false,
-    compressionFirst: false,
     customChunks: {},
     chunkPriorities: {},
     assetPrefix: "",
     bootstrapFileName: "AppBootstrap.js",
-    gzipLoaderConfig: {
-      debugMode: false,
-      useGzip: false,
-      fallbackToUncompressed: true,
-      timeout: 1e4,
-      retries: 3
-    },
     ...options
   };
   const priorities = { ...DEFAULT_PRIORITIES, ...opts.chunkPriorities };
   return {
     name: "app-bootstrap-lib",
-    async configureServer(server) {
-      console.log("[app-bootstrap-lib] \u{1F680} Development server starting, generating bootstrap files...");
-      try {
-        const { generateDevModeFiles: generateDevModeFiles2 } = await Promise.resolve().then(() => (init_vite_plugin_server(), vite_plugin_server_exports));
-        const publicDir = server.config.publicDir || "public";
-        console.log(`[app-bootstrap-lib] \u{1F4C1} Public directory: ${publicDir}`);
-        generateDevModeFiles2(opts, publicDir);
-      } catch (e) {
-        console.error("[app-bootstrap-lib] Error generating dev mode files:", e);
-      }
-    },
     config(config) {
       if (!config.build) config.build = {};
       config.build.cssCodeSplit = true;
@@ -734,7 +648,10 @@ function appBootstrapPlugin(options = {}) {
       return config;
     },
     transformIndexHtml(html) {
-      return transformIndexHtml(html, opts);
+      console.log("[app-bootstrap-lib] Transforming index.html...");
+      const result = transformIndexHtml(html, opts, options.workbox);
+      console.log("[app-bootstrap-lib] HTML transformation complete");
+      return result;
     },
     generateBundle(_options, bundle) {
       buildAssets = analyzeBuildOutput(bundle, priorities, opts.assetPrefix);
