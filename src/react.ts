@@ -1,294 +1,276 @@
 /**
- * Simplified React Hooks for App Bootstrap
+ * Runtime-Free Manifest Access System
  * Created: 2024-12-19
- * Purpose: React integration for app bootstrap functionality
+ * Purpose: Provides manifest access without React dependencies
+ *          Works with any framework or vanilla JavaScript
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { UseAppBootstrapReturn, LoadingState, AssetManifest, AppBootstrapConfig } from './types';
-
-// Simple event emitter for app bootstrap events
-class AppBootstrapEvents {
-    private listeners: Record<string, Function[]> = {};
-
-    on(event: string, callback: Function): () => void {
-        if (!this.listeners[event]) {
-            this.listeners[event] = [];
-        }
-        this.listeners[event].push(callback);
-
-        return () => {
-            this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
-        };
-    }
-
-    emit(event: string, data?: any): void {
-        if (this.listeners[event]) {
-            this.listeners[event].forEach(callback => callback(data));
-        }
-    }
-}
-
-// Global event emitter instance
-export const appBootstrapEvents = new AppBootstrapEvents();
-
-// Utility functions
-function getAssetManifest(): AssetManifest | null {
-    return (window as any).ASSET_MANIFEST || null;
-}
-
-function isAppBootstrapReady(): boolean {
-    return (window as any).APP_BOOTSTRAP_READY === true;
-}
-
-function getCurrentLoadingState(): LoadingState | null {
-    return (window as any).APP_BOOTSTRAP_LOADING_STATE || null;
-}
-
-/**
- * Main hook for app bootstrap integration
- */
-export function useAppBootstrap(config: AppBootstrapConfig = {}): UseAppBootstrapReturn {
-    const [loadingState, setLoadingState] = useState<LoadingState>({
-        isLoaded: false,
-        isLoading: false,
-        progress: 0,
-        currentChunk: '',
-        loadedChunks: [],
-        totalChunks: 0,
-        error: null,
-        startTime: Date.now()
-    });
-
-    const [assetManifest, setAssetManifest] = useState<AssetManifest | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const isReady = useRef(false);
-
-    // Initialize loading state
-    useEffect(() => {
-        const currentState = getCurrentLoadingState();
-        const currentManifest = getAssetManifest();
-
-        if (currentState) {
-            setLoadingState(currentState);
-        }
-
-        if (currentManifest) {
-            setAssetManifest(currentManifest);
-        }
-
-        // Check if already ready
-        if (isAppBootstrapReady()) {
-            isReady.current = true;
-            setLoadingState(prev => ({
-                ...prev,
-                isLoaded: true,
-                isLoading: false,
-                progress: 100
-            }));
-        }
-    }, []);
-
-    // Set up event listeners
-    useEffect(() => {
-        const unsubscribeStart = appBootstrapEvents.on('loading:start', (_event: any) => {
-            setLoadingState(prev => ({
-                ...prev,
-                isLoading: true,
-                isLoaded: false,
-                startTime: Date.now(),
-                error: null
-            }));
-            setError(null);
-        });
-
-        const unsubscribeProgress = appBootstrapEvents.on('loading:progress', (event: any) => {
-            setLoadingState(prev => ({
-                ...prev,
-                progress: event.data?.progress || prev.progress
-            }));
-        });
-
-        const unsubscribeComplete = appBootstrapEvents.on('loading:complete', (_event: any) => {
-            isReady.current = true;
-            setLoadingState(prev => ({
-                ...prev,
-                isLoaded: true,
-                isLoading: false,
-                progress: 100,
-                endTime: Date.now(),
-                duration: Date.now() - prev.startTime
-            }));
-        });
-
-        const unsubscribeError = appBootstrapEvents.on('loading:error', (event: any) => {
-            const errorMessage = event.data?.error || 'Unknown loading error';
-            setError(errorMessage);
-            setLoadingState(prev => ({
-                ...prev,
-                isLoading: false,
-                error: errorMessage
-            }));
-        });
-
-        const unsubscribeManifestLoaded = appBootstrapEvents.on('manifest:loaded', (event: any) => {
-            setAssetManifest(event.data?.manifest);
-        });
-
-        // Cleanup function
-        return () => {
-            unsubscribeStart();
-            unsubscribeProgress();
-            unsubscribeComplete();
-            unsubscribeError();
-            unsubscribeManifestLoaded();
-        };
-    }, []);
-
-    // Poll for asset manifest if not available
-    useEffect(() => {
-        if (assetManifest || !config.enableDebug) return;
-
-        const pollInterval = setInterval(() => {
-            const manifest = getAssetManifest();
-            if (manifest) {
-                setAssetManifest(manifest);
-                clearInterval(pollInterval);
-            }
-        }, 100);
-
-        return () => clearInterval(pollInterval);
-    }, [assetManifest, config.enableDebug]);
-
-    // Development mode detection and ready state
-    useEffect(() => {
-        if (isReady.current) return;
-
-        // In development mode, detect when React app is mounted and ready
-        const checkDevReady = () => {
-            // Check if React app is mounted and DOM is ready
-            const rootElement = document.getElementById('root');
-            if (rootElement && rootElement.children.length > 0) {
-                // Check if the app content is actually rendered
-                const appContent = rootElement.querySelector('.app, .home-page, .system-config-page, .video-player-page');
-                if (appContent) {
-                    console.log('[useAppBootstrap] Development mode: App content detected, marking as ready');
-                    isReady.current = true;
-                    setLoadingState(prev => ({
-                        ...prev,
-                        isLoaded: true,
-                        isLoading: false,
-                        progress: 100,
-                        endTime: Date.now(),
-                        duration: Date.now() - prev.startTime
-                    }));
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        // Try immediately
-        if (checkDevReady()) return;
-
-        // Poll for app content in development mode
-        const pollInterval = setInterval(() => {
-            if (checkDevReady()) {
-                clearInterval(pollInterval);
-            }
-        }, 100);
-
-        // Fallback timeout
-        const timeout = setTimeout(() => {
-            clearInterval(pollInterval);
-            if (!isReady.current) {
-                console.log('[useAppBootstrap] Development mode: Fallback timeout, marking as ready');
-                isReady.current = true;
-                setLoadingState(prev => ({
-                    ...prev,
-                    isLoaded: true,
-                    isLoading: false,
-                    progress: 100,
-                    endTime: Date.now(),
-                    duration: Date.now() - prev.startTime
-                }));
-            }
-        }, 3000); // 3 second timeout
-
-        return () => {
-            clearInterval(pollInterval);
-            clearTimeout(timeout);
-        };
-    }, []);
-
-    // Retry function
-    const retry = useCallback(() => {
-        setError(null);
-        setLoadingState(prev => ({
-            ...prev,
-            error: null,
-            isLoading: true,
-            isLoaded: false,
-            startTime: Date.now()
-        }));
-
-        appBootstrapEvents.emit('loading:retry', { timestamp: Date.now() });
-    }, []);
-
-    // Get chunk progress
-    const getChunkProgress = useCallback((chunkName: string): number => {
-        if (!assetManifest) return 0;
-        const chunk = assetManifest.js[chunkName];
-        return chunk ? 100 : 0;
-    }, [assetManifest]);
-
-    // Get overall progress
-    const getOverallProgress = useCallback((): number => {
-        return loadingState.progress;
-    }, [loadingState.progress]);
-
-    // Debug logging
-    useEffect(() => {
-        if (config.enableDebug) {
-            console.log('[useAppBootstrap] Loading state:', loadingState);
-            console.log('[useAppBootstrap] Asset manifest:', assetManifest);
-            console.log('[useAppBootstrap] Error:', error);
-        }
-    }, [loadingState, assetManifest, error, config.enableDebug]);
-
-    return {
-        loadingState,
-        assetManifest,
-        isReady: isReady.current,
-        error,
-        retry,
-        getChunkProgress,
-        getOverallProgress
+// Types for the enhanced manifest
+interface EnhancedAssetManifest {
+    js: Record<string, string>;
+    css: Record<string, string>;
+    loadingSequence: {
+        js: string[];
+        css: string[];
+    };
+    buildInfo: {
+        appName: string;
+        compressionEnabled: boolean;
+        spaHandlerCompatible: boolean;
+        timestamp: number;
+    };
+    spaHandler: {
+        rootPath: string;
+        fallbackFile: string;
+        enableCompression: boolean;
+        enableCaching: boolean;
+        cacheMaxAge: number;
+        systemFiles: string[];
+    };
+    pwa: {
+        enabled: boolean;
+        manifestFile: string;
+        serviceWorkerFile: string;
+        workboxFile: string;
     };
 }
 
-/**
- * Simplified hook for basic app bootstrap status
- */
-export function useAppBootstrapStatus() {
-    const { loadingState, isReady, error } = useAppBootstrap();
+interface LoadingState {
+    isLoaded: boolean;
+    isLoading: boolean;
+    progress: number;
+    currentChunk: string;
+    loadedChunks: string[];
+    totalChunks: number;
+    error: string | null;
+    startTime: number;
+}
 
+interface BootstrapEvents {
+    on: (event: string, callback: (data: any) => void) => void;
+    emit: (event: string, data: any) => void;
+}
+
+// Global types for the bootstrap system
+declare global {
+    interface Window {
+        ASSET_MANIFEST: EnhancedAssetManifest;
+        APP_BOOTSTRAP_LOADING_STATE: LoadingState;
+        APP_BOOTSTRAP_EVENTS: BootstrapEvents;
+        APP_BOOTSTRAP_READY: boolean;
+    }
+}
+
+// Runtime-free manifest access functions
+export function getAssetManifest(): EnhancedAssetManifest | null {
+    return window.ASSET_MANIFEST || null;
+}
+
+export function getLoadingState(): LoadingState | null {
+    return window.APP_BOOTSTRAP_LOADING_STATE || null;
+}
+
+export function isAppReady(): boolean {
+    return window.APP_BOOTSTRAP_READY === true;
+}
+
+export function getSPAHandlerConfig() {
+    const manifest = getAssetManifest();
+    return manifest?.spaHandler || null;
+}
+
+export function getPWAConfig() {
+    const manifest = getAssetManifest();
+    return manifest?.pwa || null;
+}
+
+export function getBuildInfo() {
+    const manifest = getAssetManifest();
+    return manifest?.buildInfo || null;
+}
+
+export function getCompressionStatus() {
+    const manifest = getAssetManifest();
     return {
-        isReady,
-        isLoading: loadingState.isLoading,
-        isLoaded: loadingState.isLoaded,
-        progress: loadingState.progress,
-        error,
-        currentChunk: loadingState.currentChunk
+        enabled: manifest?.buildInfo.compressionEnabled || false,
+        spaHandlerEnabled: manifest?.spaHandler.enableCompression || false
     };
 }
 
-/**
- * Hook for app bootstrap with custom configuration
- */
-export function useAppBootstrapWithConfig(config: AppBootstrapConfig) {
-    return useAppBootstrap(config);
+export function getSystemFiles() {
+    const manifest = getAssetManifest();
+    return manifest?.spaHandler.systemFiles || [];
 }
 
-// Export event emitter for external use
-// Note: appBootstrapEvents is already exported above
+export function isSystemFile(filename: string): boolean {
+    const systemFiles = getSystemFiles();
+    return systemFiles.includes(filename);
+}
+
+export function getAssetUrls() {
+    const manifest = getAssetManifest();
+    return {
+        js: manifest?.js || {},
+        css: manifest?.css || {},
+        loadingSequence: manifest?.loadingSequence || { js: [], css: [] }
+    };
+}
+
+export function getSPAHandlerCompatibility() {
+    const manifest = getAssetManifest();
+    return {
+        compatible: manifest?.buildInfo.spaHandlerCompatible || false,
+        rootPath: manifest?.spaHandler.rootPath || '/',
+        fallbackFile: manifest?.spaHandler.fallbackFile || 'index.html'
+    };
+}
+
+export function getCacheConfig() {
+    const manifest = getAssetManifest();
+    return {
+        enabled: manifest?.spaHandler.enableCaching || false,
+        maxAge: manifest?.spaHandler.cacheMaxAge || 86400
+    };
+}
+
+export function triggerAssetReload() {
+    if (window.APP_BOOTSTRAP_EVENTS) {
+        window.APP_BOOTSTRAP_EVENTS.emit('reload:requested', { timestamp: Date.now() });
+    }
+}
+
+export async function getUnifiedManifest() {
+    try {
+        const response = await fetch('/unified-manifest.json');
+        if (response.ok) {
+            return await response.json();
+        }
+    } catch (error) {
+        console.warn('Failed to fetch unified manifest:', error);
+    }
+    return null;
+}
+
+// Event listener utilities for framework integration
+export function onBootstrapEvent(event: string, callback: (data: any) => void) {
+    if (window.APP_BOOTSTRAP_EVENTS) {
+        window.APP_BOOTSTRAP_EVENTS.on(event, callback);
+    }
+}
+
+export function onLoadingProgress(callback: (data: { progress: number }) => void) {
+    onBootstrapEvent('loading:progress', callback);
+}
+
+export function onLoadingComplete(callback: () => void) {
+    onBootstrapEvent('loading:complete', callback);
+}
+
+export function onAppReady(callback: () => void) {
+    if (isAppReady()) {
+        callback();
+    } else {
+        onLoadingComplete(callback);
+    }
+}
+
+// React-like hooks for framework compatibility
+// These are just wrappers around the runtime-free functions
+export function useAssetManifest(): EnhancedAssetManifest | null {
+    return getAssetManifest();
+}
+
+export function useLoadingState(): LoadingState | null {
+    return getLoadingState();
+}
+
+export function useAppReady(): boolean {
+    return isAppReady();
+}
+
+export function useSPAHandlerConfig() {
+    return getSPAHandlerConfig();
+}
+
+export function usePWAConfig() {
+    return getPWAConfig();
+}
+
+export function useAssetReload() {
+    return triggerAssetReload;
+}
+
+export function useBuildInfo() {
+    return getBuildInfo();
+}
+
+export function useCompressionStatus() {
+    return getCompressionStatus();
+}
+
+export function useSystemFiles() {
+    return getSystemFiles();
+}
+
+export function useIsSystemFile() {
+    return isSystemFile;
+}
+
+export function useAssetUrls() {
+    return getAssetUrls();
+}
+
+export function useUnifiedManifest() {
+    // This would need to be implemented with React's useState/useEffect
+    // For now, return a promise-based approach
+    return getUnifiedManifest();
+}
+
+export function useSPAHandlerCompatibility() {
+    return getSPAHandlerCompatibility();
+}
+
+export function useCacheConfig() {
+    return getCacheConfig();
+}
+
+// Default export with all functions
+export default {
+    // Runtime-free functions
+    getAssetManifest,
+    getLoadingState,
+    isAppReady,
+    getSPAHandlerConfig,
+    getPWAConfig,
+    getBuildInfo,
+    getCompressionStatus,
+    getSystemFiles,
+    isSystemFile,
+    getAssetUrls,
+    getSPAHandlerCompatibility,
+    getCacheConfig,
+    triggerAssetReload,
+    getUnifiedManifest,
+
+    // Event utilities
+    onBootstrapEvent,
+    onLoadingProgress,
+    onLoadingComplete,
+    onAppReady,
+
+    // React-like hooks (for compatibility)
+    useAssetManifest,
+    useLoadingState,
+    useAppReady,
+    useSPAHandlerConfig,
+    usePWAConfig,
+    useAssetReload,
+    useBuildInfo,
+    useCompressionStatus,
+    useSystemFiles,
+    useIsSystemFile,
+    useAssetUrls,
+    useUnifiedManifest,
+    useSPAHandlerCompatibility,
+    useCacheConfig
+};

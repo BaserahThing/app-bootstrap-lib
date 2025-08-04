@@ -9,9 +9,9 @@
 
 import type { Plugin } from 'vite';
 import type { AppBootstrapOptions, AssetManifest } from './types';
-import type { PWAConfig } from './pwa';
+
 import { generateAppBootstrap } from './vite-plugin-utils';
-import { generateWorkboxServiceWorker, generateServiceWorkerRegistration, generatePWAManifest, type WorkboxOptions } from './workbox';
+
 
 // Default chunk priorities
 const DEFAULT_PRIORITIES = {
@@ -22,13 +22,9 @@ const DEFAULT_PRIORITIES = {
 };
 
 /**
- * Extended plugin options including PWA configuration
+ * Extended plugin options
  */
 export interface PWAAppBootstrapOptions extends AppBootstrapOptions {
-    /** PWA-specific configuration */
-    pwa?: PWAConfig;
-    /** Workbox configuration */
-    workbox?: WorkboxOptions;
 }
 
 /**
@@ -94,13 +90,8 @@ function analyzeBuildOutput(bundle: any, priorities: Record<string, number>, ass
 /**
  * Transform index.html to include bootstrap script and service worker registration
  */
-function transformIndexHtml(html: string, options: Required<AppBootstrapOptions>, pwaConfig?: PWAConfig, workboxOptions?: any): string {
+function transformIndexHtml(html: string, options: Required<AppBootstrapOptions>): string {
     const bootstrapScript = `<script src="/${options.bootstrapFileName}"></script>`;
-
-    // Only include service worker registration if PWA is enabled
-    const swRegistrationScript = (pwaConfig?.enablePWA !== false && workboxOptions?.enabled !== false)
-        ? `<script src="/registerSW.js"></script>`
-        : '';
 
     let result = html;
 
@@ -116,18 +107,10 @@ function transformIndexHtml(html: string, options: Required<AppBootstrapOptions>
 
     // Insert before closing head tag
     if (result.includes('</head>')) {
-        const scriptsToAdd = [bootstrapScript];
-        if (swRegistrationScript) {
-            scriptsToAdd.push(swRegistrationScript);
-        }
-        result = result.replace('</head>', `  ${scriptsToAdd.join('\n  ')}\n</head>`);
+        result = result.replace('</head>', `  ${bootstrapScript}\n</head>`);
     } else {
         // Insert at the beginning if no head tag
-        const scriptsToAdd = [bootstrapScript];
-        if (swRegistrationScript) {
-            scriptsToAdd.push(swRegistrationScript);
-        }
-        result = scriptsToAdd.join('\n') + '\n' + result;
+        result = bootstrapScript + '\n' + result;
     }
 
     return result;
@@ -211,14 +194,12 @@ export default function appBootstrapPlugin(options: PWAAppBootstrapOptions = {})
         transformIndexHtml(html) {
             console.log('[app-bootstrap-lib] 🔍 Transforming index.html...');
             console.log('[app-bootstrap-lib] 📄 HTML length:', html.length);
-            console.log('[app-bootstrap-lib] 🔧 Workbox enabled:', options.workbox?.enabled);
 
-            const result = transformIndexHtml(html, opts, options.pwa, options.workbox);
+            const result = transformIndexHtml(html, opts);
 
             console.log('[app-bootstrap-lib] ✅ HTML transformation complete');
             console.log('[app-bootstrap-lib] 📄 Result length:', result.length);
             console.log('[app-bootstrap-lib] 🔍 Contains AppBootstrap.js:', result.includes('AppBootstrap.js'));
-            console.log('[app-bootstrap-lib] 🔍 Contains registerSW.js:', result.includes('registerSW.js'));
 
             return result;
         },
@@ -254,52 +235,7 @@ export default function appBootstrapPlugin(options: PWAAppBootstrapOptions = {})
                 source: appBootstrapContent
             });
 
-            // Generate PWA assets if enabled
-            const pwaEnabled = options.pwa?.enablePWA !== false;
-            const workboxEnabled = options.workbox?.enabled !== false;
 
-            if (pwaEnabled && workboxEnabled) {
-                const workboxOptions = options.workbox || {};
-                const pwaConfig = options.pwa || {};
-
-                // Generate Workbox service worker
-                const serviceWorkerContent = generateWorkboxServiceWorker(assetManifest, opts, workboxOptions);
-
-                this.emitFile({
-                    type: 'asset',
-                    fileName: 'sw.js',
-                    source: serviceWorkerContent
-                });
-
-                // Generate PWA manifest with custom configuration
-                const manifestContent = generatePWAManifest(opts, workboxOptions, pwaConfig);
-
-                this.emitFile({
-                    type: 'asset',
-                    fileName: 'manifest.webmanifest',
-                    source: manifestContent
-                });
-
-                // Generate service worker registration script
-                const registrationScript = generateServiceWorkerRegistration(opts, workboxOptions);
-                if (registrationScript) {
-                    this.emitFile({
-                        type: 'asset',
-                        fileName: 'registerSW.js',
-                        source: registrationScript
-                    });
-                }
-
-                if (opts.debugMode) {
-                    console.log(`[pwa-bootstrap-kit] 🔧 Generated Workbox service worker`);
-                    console.log(`[pwa-bootstrap-kit] 📱 Generated PWA manifest`);
-                    console.log(`[pwa-bootstrap-kit] 🚀 PWA functionality enabled`);
-                }
-            } else if (opts.debugMode) {
-                console.log(`[pwa-bootstrap-kit] ⚠️ PWA functionality disabled`);
-                if (!pwaEnabled) console.log(`[pwa-bootstrap-kit]   - PWA config disabled`);
-                if (!workboxEnabled) console.log(`[pwa-bootstrap-kit]   - Workbox disabled`);
-            }
 
             if (opts.debugMode) {
                 console.log(`[pwa-bootstrap-kit] ✅ Generated ${opts.bootstrapFileName}`);

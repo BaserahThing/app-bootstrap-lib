@@ -1,7 +1,5 @@
 import { Plugin } from 'vite';
 import { b as AppBootstrapOptions } from './types-D8l6ur8u.mjs';
-import { PWAConfig } from './pwa.mjs';
-import { WorkboxOptions } from './workbox.mjs';
 
 /**
  * PWA Bootstrap Kit - Vite Plugin
@@ -13,13 +11,9 @@ import { WorkboxOptions } from './workbox.mjs';
  */
 
 /**
- * Extended plugin options including PWA configuration
+ * Extended plugin options
  */
 interface PWAAppBootstrapOptions extends AppBootstrapOptions {
-    /** PWA-specific configuration */
-    pwa?: PWAConfig;
-    /** Workbox configuration */
-    workbox?: WorkboxOptions;
 }
 /**
  * Main Vite plugin function

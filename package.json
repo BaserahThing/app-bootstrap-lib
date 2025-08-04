@@ -1,7 +1,7 @@
 {
     "name": "@basirah/vite-pwa-bootstrap",
     "version": "1.2.0",
-    "description": "Vite PWA Bootstrap Toolkit - Vite plugin, React hooks, cache management, and service worker generation for seamless Progressive Web App experiences.",
+    "description": "Vite PWA Bootstrap Toolkit - Vite plugin, React hooks, cache management, and optimized loading for seamless Progressive Web App experiences with official Vite PWA integration.",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
@@ -64,7 +64,6 @@
         "react-hooks",
         "cache-manager",
         "service-worker",
-        "workbox",
         "offline",
         "loading",
         "bootstrap",
@@ -85,8 +84,8 @@
         "access": "public"
     },
     "peerDependencies": {
-        "vite": "^5.0.0",
-        "react": "^19.0.0"
+        "react": "^19.0.0",
+        "vite": "^5.0.0"
     },
     "devDependencies": {
         "@types/node": "^20.0.0",
